@@ -19,13 +19,25 @@ def get_users():
     except sqlite3.Error as e:
         return jsonify({"error": f"Database error: {str(e)}"}), 500
 
-# Add a root route to avoid 404 on /
+@app.route('/api/users/<int:id>', methods=['GET'])
+def get_user_by_id(id):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        c = conn.cursor()
+        c.execute("SELECT name FROM users WHERE id = ?", (id,))
+        result = c.fetchone()  # Fetch one row
+        conn.close()
+        if result:
+            return jsonify({"id": id, "name": result[0]})
+        else:
+            return jsonify({"error": "User not found"}), 404
+    except sqlite3.Error as e:
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+
 @app.route('/', methods=['GET', 'HEAD'])
 def home():
-    return jsonify({"message": "Welcome to the API. Use /api/users to get data."})
+    return jsonify({"message": "Welcome to the API. Use /api/users or /api/users/<id> to get data."})
 
 if __name__ == '__main__':
-    # Get the port from the environment variable 'PORT', default to 5000 if not set
     port = int(os.getenv("PORT", 5000))
-    # Bind to 0.0.0.0 to make it accessible externally
     app.run(host="0.0.0.0", port=port, debug=True)
